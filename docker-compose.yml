@@ -1,0 +1,10 @@
+services:
+  mongodb:
+    image: mongo:7.0.5
+    container_name: auth-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data:/data/db
+
+
