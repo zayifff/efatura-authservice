@@ -6,12 +6,14 @@ import com.efatura.authservice.model.User;
 import com.efatura.authservice.repository.UserRepository;
 import com.efatura.authservice.security.JwtProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -24,7 +26,9 @@ public class AuthService {
 //refreshToken: Gelen refresh token ile kullanıcıyı bul, token geçerli mi kontrol et, yeni access token üret, ResponseAuth dön.
 
     public ResponseAuth register(String email, String password, String fullName){
+        log.info("Attempting to register user with email: {}", email);
         if(userRespository.existsByEmail(email)){
+            log.warn("Email already exists");
             throw new RuntimeException("Email already exists");
         }
 
@@ -34,28 +38,40 @@ public class AuthService {
         newUser.setRefreshToken(refreshToken);
         newUser = userRespository.save(newUser);
 
+        log.info("User registered successfully with email: {}", email);
         return new ResponseAuth(jwtProvider.generateAccessToken(newUser), refreshToken,newUser.getEmail(),newUser.getRoles());
     }
 
     public ResponseAuth login(String email, String password){
+        log.info("Attempting to login user with email: {}", email);
 
-        authenticationManager.authenticate(new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(email, password));
+        try{
+            authenticationManager.authenticate(new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(email, password));
+        }catch (Exception e){
+            log.error("Login failed for email: {} - reason: {}", email, e.getMessage());
+            throw e;
+        }
+
         User user = userRespository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
         String refreshToken = jwtProvider.generateRefreshToken(user);
         user.setRefreshToken(refreshToken);
         user = userRespository.save(user);
 
+        log.info("User logged in successfully with email: {}", email);
         return new ResponseAuth(jwtProvider.generateAccessToken(user), refreshToken,user.getEmail(),user.getRoles());
     }
 
     public ResponseAuth refreshToken(String refreshToken){
+        log.info("Attempting to refresh token");
         String email = jwtProvider.getEmailFromToken(refreshToken);
         User user = userRespository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
         if(!user.getRefreshToken().equals(refreshToken)){
+            log.warn("Invalid refresh token for user: {}", email);
             throw new RuntimeException("Invalid refresh token");
         }
         String accessToken = jwtProvider.generateAccessToken(user);
 
+        log.info("Token refreshed successfully for user: {}", email);
         return new ResponseAuth(accessToken, refreshToken,user.getEmail(),user.getRoles());
     }
 
