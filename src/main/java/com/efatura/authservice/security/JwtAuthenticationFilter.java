@@ -48,7 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 3. Token içinden email'i çıkar
         userEmail = jwtProvider.getEmailFromToken(jwt);
 
-        // 4. Email doluysa ve kullanıcı henüz sisteme authenticate edilmemişse (SecurityContext boşsa)
+        // 4. Email varsa ve kullanıcı henüz sisteme authenticate edilmemişse (SecurityContext boşsa)
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
