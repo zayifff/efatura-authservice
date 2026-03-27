@@ -11,6 +11,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Slf4j
@@ -33,7 +34,7 @@ public class AuthService {
         }
 
         String hashedPassword = passwordEncoder.encode(password);
-        User newUser = userRespository.save(User.builder().email(email).password(hashedPassword).fullName(fullName).roles(Set.of("ROLE_USER")).build());
+        User newUser = userRespository.save(User.builder().email(email).password(hashedPassword).fullName(fullName).roles(new HashSet<>(Set.of("ROLE_USER"))).build());
         String refreshToken = jwtProvider.generateRefreshToken(newUser);
         newUser.setRefreshToken(refreshToken);
         newUser = userRespository.save(newUser);
